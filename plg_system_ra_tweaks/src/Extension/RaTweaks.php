@@ -10,7 +10,10 @@ namespace Ramblerseastcheshire\Plugin\System\RaTweaks\Extension;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Menu\AdministratorMenuItem;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Event\SubscriberInterface;
 
 /**
@@ -23,11 +26,158 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 	 */
 	protected $app;
 
+	private ?int $extensionId = null;
+
 	public static function getSubscribedEvents(): array
 	{
 		return [
+			'onPreprocessMenuItems' => 'onPreprocessMenuItems',
 			'onAfterRender' => 'onAfterRender',
 		];
+	}
+
+	/**
+	 * Add a direct administrator menu link to this plugin's settings.
+	 *
+	 * Joomla 4.4 dispatches this event with legacy positional arguments, while
+	 * Joomla 5 dispatches a PreprocessMenuItemsEvent object.
+	 *
+	 * @param mixed $eventOrContext
+	 * @param AdministratorMenuItem[]|null $items
+	 */
+	public function onPreprocessMenuItems($eventOrContext, ?array &$items = null): void
+	{
+		$context = $this->menuEventContext($eventOrContext);
+
+		if (!$this->app->isClient('administrator') || $context !== 'com_menus.administrator.module') {
+			return;
+		}
+
+		$menuItems = $this->menuEventItems($eventOrContext, $items);
+
+		if (!$this->isRootAdminMenu($menuItems) || $this->hasRaTweaksMenuItem($menuItems)) {
+			return;
+		}
+
+		$extensionId = $this->getExtensionId();
+
+		if ($extensionId === null) {
+			return;
+		}
+
+		$menuItems[] = new AdministratorMenuItem([
+			'title'   => 'RA Tweaks',
+			'type'    => 'component',
+			'element' => 'com_plugins',
+			'link'    => 'index.php?option=com_plugins&view=plugin&layout=edit&extension_id=' . $extensionId,
+			'class'   => 'class:sliders-h',
+		]);
+
+		if (is_object($eventOrContext) && method_exists($eventOrContext, 'updateItems')) {
+			$eventOrContext->updateItems($menuItems);
+
+			return;
+		}
+
+		if (is_object($eventOrContext) && method_exists($eventOrContext, 'setArgument')) {
+			$eventOrContext->setArgument('subject', $menuItems);
+			$eventOrContext->setArgument(1, $menuItems);
+		}
+
+		$items = $menuItems;
+	}
+
+	private function menuEventContext($eventOrContext): string
+	{
+		if (is_object($eventOrContext) && method_exists($eventOrContext, 'getContext')) {
+			return (string) $eventOrContext->getContext();
+		}
+
+		if (is_object($eventOrContext) && method_exists($eventOrContext, 'getArgument')) {
+			return (string) $eventOrContext->getArgument('context', $eventOrContext->getArgument(0, ''));
+		}
+
+		return (string) $eventOrContext;
+	}
+
+	/**
+	 * @param mixed $eventOrContext
+	 * @param AdministratorMenuItem[]|null $items
+	 *
+	 * @return AdministratorMenuItem[]
+	 */
+	private function menuEventItems($eventOrContext, ?array $items): array
+	{
+		if (is_object($eventOrContext) && method_exists($eventOrContext, 'getItems')) {
+			return $eventOrContext->getItems();
+		}
+
+		if (is_object($eventOrContext) && method_exists($eventOrContext, 'getArgument')) {
+			$eventItems = $eventOrContext->getArgument('subject', $eventOrContext->getArgument(1, []));
+
+			return is_array($eventItems) ? $eventItems : [];
+		}
+
+		return $items ?? [];
+	}
+
+	/**
+	 * @param AdministratorMenuItem[] $items
+	 */
+	private function isRootAdminMenu(array $items): bool
+	{
+		foreach ($items as $item) {
+			if (($item->element ?? '') === 'com_cpanel' && ($item->link ?? '') === 'index.php') {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param AdministratorMenuItem[] $items
+	 */
+	private function hasRaTweaksMenuItem(array $items): bool
+	{
+		foreach ($items as $item) {
+			if (($item->link ?? '') === $this->raTweaksMenuLink()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private function getExtensionId(): ?int
+	{
+		if ($this->extensionId !== null) {
+			return $this->extensionId;
+		}
+
+		$db = Factory::getContainer()->get(DatabaseInterface::class);
+		$query = $db->getQuery(true)
+			->select($db->quoteName('extension_id'))
+			->from($db->quoteName('#__extensions'))
+			->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+			->where($db->quoteName('folder') . ' = ' . $db->quote('system'))
+			->where($db->quoteName('element') . ' = ' . $db->quote('ra_tweaks'));
+
+		$db->setQuery($query);
+		$extensionId = (int) $db->loadResult();
+
+		$this->extensionId = $extensionId > 0 ? $extensionId : null;
+
+		return $this->extensionId;
+	}
+
+	private function raTweaksMenuLink(): string
+	{
+		$extensionId = $this->getExtensionId();
+
+		return $extensionId === null
+			? ''
+			: 'index.php?option=com_plugins&view=plugin&layout=edit&extension_id=' . $extensionId;
 	}
 
 	public function onAfterRender(): void
