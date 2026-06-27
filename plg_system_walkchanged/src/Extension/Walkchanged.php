@@ -444,8 +444,7 @@ function(config) {
 	}
 
 	function removeMarker(textNode) {
-		var escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-		textNode.nodeValue = textNode.nodeValue.replace(new RegExp("\\s*" + escaped + "\\s*"), " ");
+		textNode.nodeValue = textNode.nodeValue.split(marker).join(" ");
 		textNode.nodeValue = textNode.nodeValue.replace(/\s{2,}/g, " ").replace(/^\s+/, "");
 	}
 

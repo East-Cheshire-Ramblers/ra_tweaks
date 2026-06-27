@@ -8,6 +8,7 @@ It highlights rendered Ramblers walk titles that contain a configurable marker s
 
 - Looks at the final rendered site HTML on any site page or article.
 - Always loads a browser-side pass for programme pages that populate walks after page load.
+- Avoids fragile browser regex escaping so Joomla optimization plugins can safely process the script.
 - Finds rendered walk items containing the marker, defaulting to `***`.
 - Moves the marker to the start of the walk text, before the date.
 - Skips items whose nearby rendered text contains `cancelled` or `canceled`.
