@@ -911,18 +911,49 @@ function(config) {
 		return parents;
 	}
 
+	function setImportant(element, property, value) {
+		element.style.setProperty(property, value, "important");
+	}
+
 	function applyGradeRowLayout(row, icon, textWrap) {
-		row.style.display = "grid";
-		row.style.gridTemplateColumns = "max-content minmax(0, 1fr)";
-		row.style.columnGap = "0.65em";
-		row.style.alignItems = "center";
-		row.style.gridAutoRows = "auto";
-		row.style.marginBottom = "0.35em";
-		icon.style.justifySelf = "center";
-		icon.style.alignSelf = "center";
-		textWrap.style.minWidth = "0";
-		textWrap.style.display = "block";
-		textWrap.style.gridColumn = "2";
+		var media = mediaElement(icon);
+
+		setImportant(row, "display", "grid");
+		setImportant(row, "grid-template-columns", "max-content minmax(0, 1fr)");
+		setImportant(row, "column-gap", "0.65em");
+		setImportant(row, "align-items", "center");
+		setImportant(row, "grid-auto-rows", "auto");
+		setImportant(row, "margin-bottom", "0.35em");
+		setImportant(row, "box-sizing", "border-box");
+		setImportant(row, "width", "100%");
+		setImportant(row, "max-width", "100%");
+		setImportant(row, "clear", "both");
+		setImportant(icon, "grid-column", "1");
+		setImportant(icon, "grid-row", "1");
+		setImportant(icon, "justify-self", "center");
+		setImportant(icon, "align-self", "center");
+		setImportant(icon, "float", "none");
+		setImportant(icon, "display", "inline-flex");
+		setImportant(icon, "align-items", "center");
+		setImportant(icon, "justify-content", "center");
+		setImportant(icon, "width", "max-content");
+		setImportant(icon, "max-width", "none");
+		setImportant(icon, "margin", "0");
+		setImportant(textWrap, "grid-column", "2");
+		setImportant(textWrap, "grid-row", "1");
+		setImportant(textWrap, "min-width", "0");
+		setImportant(textWrap, "display", "block");
+		setImportant(textWrap, "float", "none");
+		setImportant(textWrap, "width", "auto");
+		setImportant(textWrap, "max-width", "100%");
+		setImportant(textWrap, "white-space", "normal");
+
+		if (media) {
+			setImportant(media, "display", "block");
+			setImportant(media, "float", "none");
+			setImportant(media, "margin", "0 auto");
+			setImportant(media, "max-width", "none");
+		}
 	}
 
 	function alignGradeIcon(container) {
