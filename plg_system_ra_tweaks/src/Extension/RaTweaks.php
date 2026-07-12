@@ -1097,20 +1097,13 @@ function(config) {
 
 	function programmeItemPointer(item) {
 		var wrapper = item;
-		var pointer = item.querySelector(":scope > .pointer");
-		var grade = item.querySelector(":scope > .grade");
 
-		if (!pointer || !grade) {
+		if (item.classList.contains("walkPublished") || item.classList.contains("walkdetail")) {
 			wrapper = item.querySelector(":scope > .item, :scope > .updated, :scope > .new") || item;
-			pointer = wrapper.querySelector(":scope > .pointer");
-			grade = wrapper.querySelector(":scope > .grade");
 		}
 
-		if ((!pointer || !grade) && wrapper !== item) {
-			wrapper = wrapper.querySelector(":scope > .updated, :scope > .new") || wrapper;
-			pointer = wrapper.querySelector(":scope > .pointer");
-			grade = wrapper.querySelector(":scope > .grade");
-		}
+		var pointer = wrapper.querySelector(".pointer");
+		var grade = wrapper.querySelector(".grade");
 
 		if (!pointer || !grade || !/\d\s*(mi|km)\b/i.test(pointer.textContent || "")) {
 			return null;
