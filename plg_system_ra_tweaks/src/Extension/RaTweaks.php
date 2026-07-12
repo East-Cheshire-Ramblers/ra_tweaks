@@ -931,7 +931,7 @@ function(config) {
 
 		var parent = element.parentElement;
 
-		if (!parent || !/\b(mi|km)\b/i.test(parent.textContent || "")) {
+		if (!parent || !/\d\s*(mi|km)\b/i.test(parent.textContent || "")) {
 			return false;
 		}
 
@@ -971,7 +971,7 @@ function(config) {
 			return false;
 		}
 
-		if (!/\b(mi|km)\b/i.test(parent.textContent || "")) {
+		if (!/\d\s*(mi|km)\b/i.test(parent.textContent || "")) {
 			return false;
 		}
 
@@ -1112,7 +1112,7 @@ function(config) {
 			grade = wrapper.querySelector(":scope > .grade");
 		}
 
-		if (!pointer || !grade || !/\b(mi|km)\b/i.test(pointer.textContent || "")) {
+		if (!pointer || !grade || !/\d\s*(mi|km)\b/i.test(pointer.textContent || "")) {
 			return null;
 		}
 
