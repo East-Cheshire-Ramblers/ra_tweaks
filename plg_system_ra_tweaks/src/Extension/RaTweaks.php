@@ -225,10 +225,11 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 		$colour = $this->normaliseColour((string) $this->params->get('colour', '#F08050'));
 		$cancelTerms = $this->normaliseList((string) $this->params->get('cancel_terms', 'cancelled,canceled'));
 		$alignGradeIcons = (bool) $this->params->get('align_grade_icons', 1);
+		$walkTypeLabelling = $this->walkTypeLabellingConfig();
 
 		if ($marker === '') {
-			if ($alignGradeIcons) {
-				$output = $this->injectFrontendScript($body, $marker, $colour, $cancelTerms, $alignGradeIcons);
+			if ($alignGradeIcons || $walkTypeLabelling['enabled']) {
+				$output = $this->injectFrontendScript($body, $marker, $colour, $cancelTerms, $alignGradeIcons, $walkTypeLabelling);
 
 				if ($output !== $body) {
 					$this->app->setBody($output);
@@ -239,7 +240,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 		}
 
 		if (strpos($body, $marker) === false) {
-			$output = $this->injectFrontendScript($body, $marker, $colour, $cancelTerms, $alignGradeIcons);
+			$output = $this->injectFrontendScript($body, $marker, $colour, $cancelTerms, $alignGradeIcons, $walkTypeLabelling);
 
 			if ($output !== $body) {
 				$this->app->setBody($output);
@@ -300,11 +301,35 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 			}
 		}
 
-		$output = $this->injectFrontendScript($output, $marker, $colour, $cancelTerms, $alignGradeIcons);
+		$output = $this->injectFrontendScript($output, $marker, $colour, $cancelTerms, $alignGradeIcons, $walkTypeLabelling);
 
 		if ($changed || $output !== $body) {
 			$this->app->setBody($output);
 		}
+	}
+
+	/**
+	 * @return array{enabled: bool, strollerMax: float, shortMax: float, mediumMax: float, colours: array<string, string>}
+	 */
+	private function walkTypeLabellingConfig(): array
+	{
+		return [
+			'enabled' => (bool) $this->params->get('walk_type_labels', 1),
+			'strollerMax' => $this->normaliseMiles((string) $this->params->get('stroller_max', '4')),
+			'shortMax' => $this->normaliseMiles((string) $this->params->get('short_max', '7.9')),
+			'mediumMax' => $this->normaliseMiles((string) $this->params->get('medium_max', '10.9')),
+			'colours' => [
+				'stroller' => $this->normaliseColour((string) $this->params->get('stroller_colour', '#4CAF50')),
+				'short' => $this->normaliseColour((string) $this->params->get('short_colour', '#2196F3')),
+				'medium' => $this->normaliseColour((string) $this->params->get('medium_colour', '#FF9800')),
+				'long' => $this->normaliseColour((string) $this->params->get('long_colour', '#E53935')),
+			],
+		];
+	}
+
+	private function normaliseMiles(string $value): float
+	{
+		return is_numeric($value) ? (float) $value : 0.0;
 	}
 
 	private function normaliseColour(string $colour): string
@@ -541,8 +566,9 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 	 * walk rows after Joomla has rendered the article.
 	 *
 	 * @param string[] $cancelTerms
+	 * @param array{enabled: bool, strollerMax: float, shortMax: float, mediumMax: float, colours: array<string, string>} $walkTypeLabelling
 	 */
-	private function injectFrontendScript(string $body, string $marker, string $colour, array $cancelTerms, bool $alignGradeIcons): string
+	private function injectFrontendScript(string $body, string $marker, string $colour, array $cancelTerms, bool $alignGradeIcons, array $walkTypeLabelling): string
 	{
 		if (str_contains($body, 'id="plg-system-ra_tweaks-script"')) {
 			return $body;
@@ -554,6 +580,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 				'colour' => $colour,
 				'cancelTerms' => array_values($cancelTerms),
 				'alignGradeIcons' => $alignGradeIcons,
+				'walkTypeLabelling' => $walkTypeLabelling,
 			],
 			JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
 		);
@@ -664,6 +691,7 @@ function(config) {
 		return String(term).toLowerCase();
 	}) : ["cancelled", "canceled"];
 	var alignGradeIcons = config.alignGradeIcons !== false;
+	var walkTypeLabelling = config.walkTypeLabelling || { enabled: false };
 	var highlightChangedWalks = marker !== "";
 	var scheduled = false;
 
@@ -804,13 +832,13 @@ function(config) {
 
 	function colourElement(element) {
 		if (element.nodeType === Node.ELEMENT_NODE) {
-			if (element.getAttribute("data-ra_tweaks-marker") === "1") {
+			if (element.getAttribute("data-ra_tweaks-marker") === "1" || element.getAttribute("data-ra_tweaks-walk-type") === "1") {
 				return;
 			}
 
 			element.style.color = colour;
 			Array.prototype.slice.call(element.querySelectorAll("*")).forEach(function(child) {
-				if (child.getAttribute("data-ra_tweaks-marker") === "1") {
+				if (child.getAttribute("data-ra_tweaks-marker") === "1" || child.getAttribute("data-ra_tweaks-walk-type") === "1") {
 					return;
 				}
 
@@ -1067,11 +1095,7 @@ function(config) {
 		container.setAttribute("data-ra_tweaks-grade-aligned", "1");
 	}
 
-	function alignProgrammeItem(item) {
-		if (!alignGradeIcons || !item || item.getAttribute("data-ra_tweaks-grade-aligned") === "1") {
-			return;
-		}
-
+	function programmeItemPointer(item) {
 		var wrapper = item;
 		var pointer = item.querySelector(":scope > .pointer");
 		var grade = item.querySelector(":scope > .grade");
@@ -1089,12 +1113,106 @@ function(config) {
 		}
 
 		if (!pointer || !grade || !/\b(mi|km)\b/i.test(pointer.textContent || "")) {
+			return null;
+		}
+
+		return { wrapper: wrapper, pointer: pointer, grade: grade };
+	}
+
+	function alignProgrammeItem(item) {
+		if (!alignGradeIcons || !item || item.getAttribute("data-ra_tweaks-grade-aligned") === "1") {
 			return;
 		}
 
-		applyGradeRowLayout(wrapper, grade, pointer);
-		wrapper.setAttribute("data-ra_tweaks-grade-aligned", "1");
+		var found = programmeItemPointer(item);
+
+		if (!found) {
+			return;
+		}
+
+		applyGradeRowLayout(found.wrapper, found.grade, found.pointer);
+		found.wrapper.setAttribute("data-ra_tweaks-grade-aligned", "1");
 		item.setAttribute("data-ra_tweaks-grade-aligned", "1");
+	}
+
+	function extractMiles(text) {
+		var match = /(\d+(?:\.\d+)?)\s*mi\b/i.exec(text || "");
+
+		return match ? parseFloat(match[1]) : null;
+	}
+
+	function walkTypeLabel(miles) {
+		if (miles === null || isNaN(miles)) {
+			return null;
+		}
+
+		if (miles <= walkTypeLabelling.strollerMax) {
+			return "STROLLER";
+		}
+
+		if (miles <= walkTypeLabelling.shortMax) {
+			return "SHORT WALK";
+		}
+
+		if (miles <= walkTypeLabelling.mediumMax) {
+			return "MEDIUM WALK";
+		}
+
+		return "LONG WALK";
+	}
+
+	function walkTypeColour(label) {
+		var colours = walkTypeLabelling.colours || {};
+
+		switch (label) {
+			case "STROLLER":
+				return colours.stroller;
+			case "SHORT WALK":
+				return colours.short;
+			case "MEDIUM WALK":
+				return colours.medium;
+			case "LONG WALK":
+				return colours.long;
+			default:
+				return null;
+		}
+	}
+
+	function labelProgrammeItem(item) {
+		if (!walkTypeLabelling.enabled || !item || item.getAttribute("data-ra_tweaks-walk-type-labelled") === "1") {
+			return;
+		}
+
+		if (isCancelled(item)) {
+			return;
+		}
+
+		var found = programmeItemPointer(item);
+
+		if (!found) {
+			return;
+		}
+
+		item.setAttribute("data-ra_tweaks-walk-type-labelled", "1");
+
+		if (/\b(LONG|SHORT|MEDIUM)\s+WALK\b|\bSTROLLER\b|\bEVENING\s+WALK\b/i.test(found.pointer.textContent || "")) {
+			return;
+		}
+
+		var label = walkTypeLabel(extractMiles(found.pointer.textContent));
+		var colour = label ? walkTypeColour(label) : null;
+
+		if (!label || !colour) {
+			return;
+		}
+
+		var badge = document.createElement("span");
+		badge.setAttribute("data-ra_tweaks-walk-type", "1");
+		badge.style.color = colour;
+		badge.style.fontWeight = "700";
+		badge.textContent = " " + label;
+
+		found.pointer.appendChild(badge);
 	}
 
 	function trimTrailingBreak(textWrap) {
@@ -1184,6 +1302,7 @@ function(config) {
 	function process() {
 		scheduled = false;
 		programmeItems().forEach(alignProgrammeItem);
+		programmeItems().forEach(labelProgrammeItem);
 		programmeRows().forEach(function(container) {
 			alignGradeIcon(container);
 			processElement(container);
