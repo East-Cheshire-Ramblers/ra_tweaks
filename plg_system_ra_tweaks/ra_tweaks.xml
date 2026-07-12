@@ -7,7 +7,7 @@
 	<license>GNU General Public License version 3 or later; see LICENSE.txt</license>
 	<authorEmail>webmaster@bigley.me.uk</authorEmail>
 	<authorUrl>https://ramblerseastcheshire.org.uk/</authorUrl>
-	<version>1.1.16</version>
+	<version>1.2.0</version>
 	<description>PLG_SYSTEM_RA_TWEAKS_XML_DESCRIPTION</description>
 	<namespace path="src">Ramblerseastcheshire\Plugin\System\RaTweaks</namespace>
 	<files>
@@ -56,6 +56,80 @@
 					label="PLG_SYSTEM_RA_TWEAKS_FIELD_CANCEL_TERMS_LABEL"
 					description="PLG_SYSTEM_RA_TWEAKS_FIELD_CANCEL_TERMS_DESC"
 					default="cancelled,canceled"
+				/>
+			</fieldset>
+			<fieldset
+				name="walk_type_labelling"
+				label="PLG_SYSTEM_RA_TWEAKS_FIELDSET_WALK_TYPE_LABELLING_LABEL"
+				description="PLG_SYSTEM_RA_TWEAKS_FIELDSET_WALK_TYPE_LABELLING_DESC"
+			>
+				<field
+					name="walk_type_labelling_intro"
+					type="spacer"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELDSET_WALK_TYPE_LABELLING_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELDSET_WALK_TYPE_LABELLING_DESC"
+					class="text"
+				/>
+				<field
+					name="walk_type_labels"
+					type="radio"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELD_WALK_TYPE_LABELS_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELD_WALK_TYPE_LABELS_DESC"
+					layout="joomla.form.field.radio.switcher"
+					default="1"
+					filter="integer"
+				>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="stroller_max"
+					type="text"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELD_STROLLER_MAX_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELD_STROLLER_MAX_DESC"
+					default="4"
+				/>
+				<field
+					name="stroller_colour"
+					type="color"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELD_STROLLER_COLOUR_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELD_STROLLER_COLOUR_DESC"
+					default="#4CAF50"
+				/>
+				<field
+					name="short_max"
+					type="text"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELD_SHORT_MAX_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELD_SHORT_MAX_DESC"
+					default="7.9"
+				/>
+				<field
+					name="short_colour"
+					type="color"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELD_SHORT_COLOUR_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELD_SHORT_COLOUR_DESC"
+					default="#2196F3"
+				/>
+				<field
+					name="medium_max"
+					type="text"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELD_MEDIUM_MAX_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELD_MEDIUM_MAX_DESC"
+					default="10.9"
+				/>
+				<field
+					name="medium_colour"
+					type="color"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELD_MEDIUM_COLOUR_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELD_MEDIUM_COLOUR_DESC"
+					default="#FF9800"
+				/>
+				<field
+					name="long_colour"
+					type="color"
+					label="PLG_SYSTEM_RA_TWEAKS_FIELD_LONG_COLOUR_LABEL"
+					description="PLG_SYSTEM_RA_TWEAKS_FIELD_LONG_COLOUR_DESC"
+					default="#E53935"
 				/>
 			</fieldset>
 			<fieldset

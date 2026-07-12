@@ -18,6 +18,7 @@ The first tweak highlights rendered Ramblers walk titles that contain a configur
 - Colours the programme-page changed-walk row text after the grade icon, including date, title, distance, and contact.
 - Adds an **RA Tweaks** administrator menu item under **Components** that opens this plugin's settings.
 - Optionally aligns programme walk grade icons beside wrapped title text.
+- Optionally appends a coloured walk type label (STROLLER, SHORT WALK, MEDIUM WALK or LONG WALK) to the end of each programme walk title, based on the walk's mileage, so it no longer needs to be typed in manually. Skips walks that already contain a walk type or "evening walk" in the title, and skips cancelled walks.
 
 ## Install
 
@@ -25,13 +26,13 @@ Zip the contents of `plg_system_ra_tweaks` and install the zip in Joomla:
 
 ```sh
 cd plg_system_ra_tweaks
-zip -r ../ra_tweaks-1.1.16.zip .
+zip -r ../ra_tweaks-1.2.0.zip .
 ```
 
 Then in Joomla:
 
 1. Go to **System > Install > Extensions**.
-2. Upload `ra_tweaks-1.1.16.zip`.
+2. Upload `ra_tweaks-1.2.0.zip`.
 3. Go to **System > Manage > Plugins**.
 4. Enable **System - RA Tweaks**.
 5. Configure the marker and colour.
@@ -48,5 +49,11 @@ For each release, update `updates/ra_tweaks.xml` to the new version and make sur
 
 - **Changed marker**: `***`
 - **Highlight colour**: any hex colour, defaulting to the East Cheshire logo orange `#F08050`
+- **Walk type labelling mileage bands** (up to and including each maximum):
+  - Stroller: up to 4 miles
+  - Short Walk: 4.1–7.9 miles
+  - Medium Walk: 8–10.9 miles
+  - Long Walk: 11+ miles
+  - Evening Walk is not detected automatically (walk start times aren't shown on the programme page) — keep adding it manually to the title.
 
 The marker remains visible because the website key uses it to denote changed walk details.
