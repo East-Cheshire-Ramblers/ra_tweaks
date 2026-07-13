@@ -20,7 +20,7 @@ The first tweak highlights rendered Ramblers walk titles that contain a configur
 - Optionally aligns programme walk grade icons beside wrapped title text.
 - Optionally appends a coloured walk type label (STROLLER, SHORT WALK, MEDIUM WALK or LONG WALK) to the end of each programme walk title, based on the walk's mileage, so it no longer needs to be typed in manually. Skips walks that already contain a manual walk type in the title, and skips cancelled walks.
 - Evening walks: since start time isn't shown on the programme listing, walk leaders add `- EVENING WALK` anywhere in the title as before. The plugin then moves that text to the end of the title and applies its own configurable colour, consistent with the mileage-based labels. Mileage bands are not applied to evening walks.
-- Diary Dates module: adds a coloured category icon to the left of each entry (Committee Meeting, Social Event, Training, Weekend Away, Coach Trip, Themed Walk), looked up from the linked event's `event_type_id` in the `#__ra_events` table. Runs server-side since the category isn't present in the rendered listing markup, only in the database.
+- Diary Dates module: adds a coloured category icon to the left of each entry (Committee Meeting, Social Event, Training, Weekend Away, Coach Trip, Themed Walk), looked up from the linked event's `event_type_id` in the `#__ra_events` table. Runs server-side since the category isn't present in the rendered listing markup, only in the database. Icons are drawn as inline SVG (not emoji) for consistent rendering across browsers, and wrapped titles hang-indent under the text rather than the icon.
 
 ## Install
 
@@ -28,13 +28,13 @@ Zip the contents of `plg_system_ra_tweaks` and install the zip in Joomla:
 
 ```sh
 cd plg_system_ra_tweaks
-zip -r ../ra_tweaks-1.4.3.zip .
+zip -r ../ra_tweaks-1.4.4.zip .
 ```
 
 Then in Joomla:
 
 1. Go to **System > Install > Extensions**.
-2. Upload `ra_tweaks-1.4.3.zip`.
+2. Upload `ra_tweaks-1.4.4.zip`.
 3. Go to **System > Manage > Plugins**.
 4. Enable **System - RA Tweaks**.
 5. Configure the marker and colour.
