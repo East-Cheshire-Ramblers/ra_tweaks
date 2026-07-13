@@ -575,14 +575,31 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 				continue;
 			}
 
-			$lineStart = $this->diaryEntryLineStart($anchor);
+			$lineNodes = $this->diaryEntryLineNodes($anchor);
+			$parent = $lineNodes[0]->parentNode ?? null;
 
-			if (!$lineStart->parentNode instanceof \DOMNode) {
+			if (!$parent instanceof \DOMNode) {
 				continue;
 			}
 
 			$badge = $this->createDiaryCategoryBadge($dom, $icon['symbol'], $icon['colour'], $icon['label']);
-			$lineStart->parentNode->insertBefore($badge, $lineStart);
+			$wrapper = $dom->createElement('span');
+			$wrapper->setAttribute('data-ra_tweaks-diary-row', '1');
+			$wrapper->setAttribute('style', $this->diaryRowStyle());
+			$wrapper->appendChild($badge);
+
+			$parent->insertBefore($wrapper, $lineNodes[0]);
+
+			foreach ($lineNodes as $node) {
+				$wrapper->appendChild($node);
+			}
+
+			$trailingBreak = $wrapper->nextSibling;
+
+			if ($trailingBreak instanceof \DOMElement && strtolower($trailingBreak->nodeName) === 'br') {
+				$parent->removeChild($trailingBreak);
+			}
+
 			$anchor->setAttribute('data-ra_tweaks-diary-icon', '1');
 			$changed = true;
 		}
@@ -592,14 +609,16 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 
 	/**
 	 * Diary Dates entries aren't individually wrapped - they're flat text/<br>/<a>
-	 * siblings inside one shared module container. Walk back through previous
-	 * siblings to the nearest preceding <br> (or the start of the parent) to find
-	 * the first node of this entry's own line, so the icon lands to its left
-	 * rather than at the top of the whole module.
+	 * siblings inside one shared module container. Collect the full run of nodes
+	 * making up this entry's own line: walk backward through previous siblings to
+	 * the nearest element boundary (a <br>, or the module heading for the first
+	 * entry), then forward from the anchor to the next element boundary.
+	 *
+	 * @return \DOMNode[]
 	 */
-	private function diaryEntryLineStart(\DOMElement $anchor): \DOMNode
+	private function diaryEntryLineNodes(\DOMElement $anchor): array
 	{
-		$lineStart = $anchor;
+		$backward = [];
 		$node = $anchor;
 
 		while ($node->previousSibling instanceof \DOMNode) {
@@ -609,10 +628,29 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 				break;
 			}
 
-			$lineStart = $node;
+			$backward[] = $node;
 		}
 
-		return $lineStart;
+		$nodes = array_merge(array_reverse($backward), [$anchor]);
+		$node = $anchor;
+
+		while ($node->nextSibling instanceof \DOMNode) {
+			$next = $node->nextSibling;
+
+			if ($next instanceof \DOMElement) {
+				break;
+			}
+
+			$nodes[] = $next;
+			$node = $next;
+		}
+
+		return $nodes;
+	}
+
+	private function diaryRowStyle(): string
+	{
+		return 'display: block; padding-left: 2.3em; text-indent: -2.3em;';
 	}
 
 	private function extractEventId(string $href): ?int
@@ -688,7 +726,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 	private function diaryBadgeStyle(string $colour): string
 	{
 		return 'display: inline-grid; place-items: center; '
-			. 'width: 1.7em; height: 1.7em; margin-right: 0.35em; border-radius: 999px; '
+			. 'width: 1.7em; height: 1.7em; margin-right: 0.55em; border-radius: 999px; '
 			. 'background: ' . $colour . '; color: #fff; font-size: 1.3em; font-weight: 800; '
 			. 'line-height: 1; vertical-align: -0.35em; box-sizing: border-box;';
 	}
