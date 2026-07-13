@@ -7,12 +7,12 @@
 		<type>plugin</type>
 		<folder>system</folder>
 		<client>site</client>
-		<version>1.4.6</version>
-		<infourl title="Release notes">https://github.com/East-Cheshire-Ramblers/ra_tweaks/releases/tag/v1.4.6</infourl>
+		<version>1.4.7</version>
+		<infourl title="Release notes">https://github.com/East-Cheshire-Ramblers/ra_tweaks/releases/tag/v1.4.7</infourl>
 		<downloads>
-			<downloadurl type="full" format="zip">https://github.com/East-Cheshire-Ramblers/ra_tweaks/releases/download/v1.4.6/ra_tweaks-1.4.6.zip</downloadurl>
+			<downloadurl type="full" format="zip">https://github.com/East-Cheshire-Ramblers/ra_tweaks/releases/download/v1.4.7/ra_tweaks-1.4.7.zip</downloadurl>
 		</downloads>
-		<sha256>685517d958c456b0e68965f8037b7f506cf7f707fec854afb42c5d79574870f0</sha256>
+		<sha256>00b67e934b1a2d97b89fcffa02d6aadfc1568f2a1977bde4a017a26feb0b3498</sha256>
 		<tags>
 			<tag>stable</tag>
 		</tags>
