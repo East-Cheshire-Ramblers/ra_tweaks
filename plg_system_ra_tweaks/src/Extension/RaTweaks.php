@@ -582,7 +582,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 				continue;
 			}
 
-			$badge = $this->createDiaryCategoryBadge($dom, $icon['symbol'], $icon['colour'], $icon['label']);
+			$badge = $this->createDiaryCategoryBadge($dom, $icon);
 			$wrapper = $dom->createElement('span');
 			$wrapper->setAttribute('data-ra_tweaks-diary-row', '1');
 			$wrapper->setAttribute('style', $this->diaryRowStyle());
@@ -650,7 +650,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 
 	private function diaryRowStyle(): string
 	{
-		return 'display: block; padding-left: 2.3em; text-indent: -2.3em;';
+		return 'display: block; padding-left: 36px; text-indent: -36px; line-height: 2;';
 	}
 
 	private function extractEventId(string $href): ?int
@@ -695,40 +695,126 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 	}
 
 	/**
-	 * @return array{symbol: string, colour: string, label: string}|null
+	 * Icons are drawn as inline SVG rather than emoji: colour-emoji glyphs render
+	 * inconsistently across browsers/OSes (unpredictable bounding boxes relative to
+	 * their nominal font size, causing overflow past the circular badge), while
+	 * plain SVG shapes render identically everywhere with no font dependency.
+	 *
+	 * @return array{colour: string, label: string, shapes: array<int, array{0: string, 1: array<string, string>}>}|null
 	 */
 	private function diaryCategoryIcon(int $eventTypeId): ?array
 	{
 		$icons = [
-			1 => ['symbol' => '📋', 'colour' => '#607D8B', 'label' => 'Committee Meeting'],
-			2 => ['symbol' => '🎉', 'colour' => '#E91E63', 'label' => 'Social Event'],
-			3 => ['symbol' => '🧭', 'colour' => '#009688', 'label' => 'Training'],
-			4 => ['symbol' => '🎒', 'colour' => '#FF5722', 'label' => 'Weekend Away'],
-			5 => ['symbol' => '🚌', 'colour' => '#3F51B5', 'label' => 'Coach Trip'],
-			6 => ['symbol' => '🚶', 'colour' => '#4CAF50', 'label' => 'Themed Walk'],
+			1 => [
+				'colour' => '#607D8B',
+				'label' => 'Committee Meeting',
+				'shapes' => [
+					['rect', ['x' => '6', 'y' => '4', 'width' => '12', 'height' => '16', 'rx' => '2']],
+					['rect', ['x' => '9', 'y' => '2', 'width' => '6', 'height' => '4', 'rx' => '1', 'fill' => '#fff', 'stroke' => 'none']],
+					['line', ['x1' => '8', 'y1' => '10', 'x2' => '16', 'y2' => '10']],
+					['line', ['x1' => '8', 'y1' => '13', 'x2' => '16', 'y2' => '13']],
+					['line', ['x1' => '8', 'y1' => '16', 'x2' => '13', 'y2' => '16']],
+				],
+			],
+			2 => [
+				'colour' => '#E91E63',
+				'label' => 'Social Event',
+				'shapes' => [
+					['path', ['d' => 'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 4v-4H6a2 2 0 0 1-2-2z']],
+				],
+			],
+			3 => [
+				'colour' => '#009688',
+				'label' => 'Training',
+				'shapes' => [
+					['circle', ['cx' => '12', 'cy' => '12', 'r' => '9']],
+					['polygon', ['points' => '12,6 14,12 12,18 10,12', 'fill' => '#fff', 'stroke' => 'none']],
+				],
+			],
+			4 => [
+				'colour' => '#FF5722',
+				'label' => 'Weekend Away',
+				'shapes' => [
+					['rect', ['x' => '4', 'y' => '8', 'width' => '16', 'height' => '12', 'rx' => '2']],
+					['path', ['d' => 'M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2']],
+					['line', ['x1' => '4', 'y1' => '13', 'x2' => '20', 'y2' => '13']],
+				],
+			],
+			5 => [
+				'colour' => '#3F51B5',
+				'label' => 'Coach Trip',
+				'shapes' => [
+					['rect', ['x' => '3', 'y' => '5', 'width' => '18', 'height' => '11', 'rx' => '2']],
+					['line', ['x1' => '3', 'y1' => '11', 'x2' => '21', 'y2' => '11']],
+					['circle', ['cx' => '7', 'cy' => '18', 'r' => '1.6', 'fill' => '#fff', 'stroke' => 'none']],
+					['circle', ['cx' => '17', 'cy' => '18', 'r' => '1.6', 'fill' => '#fff', 'stroke' => 'none']],
+				],
+			],
+			6 => [
+				'colour' => '#4CAF50',
+				'label' => 'Themed Walk',
+				'shapes' => [
+					['ellipse', ['cx' => '9', 'cy' => '7', 'rx' => '2.2', 'ry' => '3.2']],
+					['ellipse', ['cx' => '16', 'cy' => '16', 'rx' => '2.2', 'ry' => '3.2']],
+					['circle', ['cx' => '9', 'cy' => '12.5', 'r' => '1', 'fill' => '#fff', 'stroke' => 'none']],
+					['circle', ['cx' => '16', 'cy' => '21.5', 'r' => '1', 'fill' => '#fff', 'stroke' => 'none']],
+				],
+			],
 		];
 
 		return $icons[$eventTypeId] ?? null;
 	}
 
-	private function createDiaryCategoryBadge(\DOMDocument $document, string $symbol, string $colour, string $label): \DOMElement
+	/**
+	 * @param array{colour: string, label: string, shapes: array<int, array{0: string, 1: array<string, string>}>} $icon
+	 */
+	private function createDiaryCategoryBadge(\DOMDocument $document, array $icon): \DOMElement
 	{
 		$badge = $document->createElement('span');
 		$badge->setAttribute('data-ra_tweaks-diary-badge', '1');
-		$badge->setAttribute('title', $label);
-		$badge->setAttribute('aria-label', $label);
-		$badge->setAttribute('style', $this->diaryBadgeStyle($colour));
-		$badge->appendChild($document->createTextNode($symbol));
+		$badge->setAttribute('title', $icon['label']);
+		$badge->setAttribute('aria-label', $icon['label']);
+		$badge->setAttribute('style', $this->diaryBadgeStyle($icon['colour']));
+		$badge->appendChild($this->createDiaryCategorySvg($document, $icon['shapes']));
 
 		return $badge;
 	}
 
+	/**
+	 * @param array<int, array{0: string, 1: array<string, string>}> $shapes
+	 */
+	private function createDiaryCategorySvg(\DOMDocument $document, array $shapes): \DOMElement
+	{
+		$svgNamespace = 'http://www.w3.org/2000/svg';
+
+		$svg = $document->createElementNS($svgNamespace, 'svg');
+		$svg->setAttribute('width', '16');
+		$svg->setAttribute('height', '16');
+		$svg->setAttribute('viewBox', '0 0 24 24');
+		$svg->setAttribute('fill', 'none');
+		$svg->setAttribute('stroke', '#fff');
+		$svg->setAttribute('stroke-width', '2');
+		$svg->setAttribute('stroke-linecap', 'round');
+		$svg->setAttribute('stroke-linejoin', 'round');
+
+		foreach ($shapes as [$tag, $attributes]) {
+			$shape = $document->createElementNS($svgNamespace, $tag);
+
+			foreach ($attributes as $name => $value) {
+				$shape->setAttribute($name, $value);
+			}
+
+			$svg->appendChild($shape);
+		}
+
+		return $svg;
+	}
+
 	private function diaryBadgeStyle(string $colour): string
 	{
-		return 'display: inline-grid; place-items: center; '
-			. 'width: 1.7em; height: 1.7em; margin-right: 0.55em; border-radius: 999px; '
-			. 'background: ' . $colour . '; color: #fff; font-size: 1.3em; font-weight: 800; '
-			. 'line-height: 1; vertical-align: -0.35em; box-sizing: border-box;';
+		return 'display: inline-flex; align-items: center; justify-content: center; '
+			. 'width: 28px; height: 28px; margin-right: 8px; border-radius: 999px; '
+			. 'background: ' . $colour . '; box-sizing: border-box; vertical-align: -7px;';
 	}
 
 	private function firstMeaningfulTextNode(\DOMNode $node): ?\DOMText
