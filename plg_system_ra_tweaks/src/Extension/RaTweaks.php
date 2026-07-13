@@ -1185,15 +1185,13 @@ function(config) {
 	}
 
 	function eveningWalkTextNode(pointer) {
-		for (var i = 0; i < pointer.childNodes.length; i++) {
-			var node = pointer.childNodes[i];
-
-			if (node.nodeType === Node.TEXT_NODE && /evening\s+walk/i.test(node.nodeValue)) {
-				return node;
+		var walker = document.createTreeWalker(pointer, NodeFilter.SHOW_TEXT, {
+			acceptNode: function(textNode) {
+				return /evening\s+walk/i.test(textNode.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
 			}
-		}
+		});
 
-		return null;
+		return walker.nextNode();
 	}
 
 	function stripEveningWalk(textNode) {
