@@ -949,7 +949,8 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 			return $body;
 		}
 
-		$style = $alignGradeIcons ? '<style id="plg-system-ra_tweaks-style">' . $this->frontendStyle() . '</style>' : '';
+		$css = $this->masonryBlogItemFixStyle() . ($alignGradeIcons ? $this->frontendStyle() : '');
+		$style = '<style id="plg-system-ra_tweaks-style">' . $css . '</style>';
 		$script = $style . '<script id="plg-system-ra_tweaks-script">(' . $this->frontendScript() . ')(' . $config . ');</script>';
 
 		if (stripos($body, '</body>') !== false) {
@@ -957,6 +958,26 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 		}
 
 		return $body . $script;
+	}
+
+	/**
+	 * The site template's masonry blog listing (`.blog-items[class*="masonry-"]`)
+	 * renders each `.blog-item` as `display: inline-flex`, which sizes it to its
+	 * own content width instead of stretching to fill its CSS column - an item
+	 * with a long heading then overflows past its column and into whatever sits
+	 * to the right (e.g. the Diary Dates sidebar module). CSS multi-column layout
+	 * doesn't clip overflowing content, so this is silent until an article's
+	 * text happens to be wide enough to trigger it.
+	 */
+	private function masonryBlogItemFixStyle(): string
+	{
+		return <<<'CSS'
+.blog-items[class^="masonry-"] .blog-item,
+.blog-items[class*=" masonry-"] .blog-item {
+	display: block !important;
+	width: 100% !important;
+}
+CSS;
 	}
 
 	private function frontendStyle(): string
