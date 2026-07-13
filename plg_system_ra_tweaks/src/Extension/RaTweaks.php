@@ -605,7 +605,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 		while ($node->previousSibling instanceof \DOMNode) {
 			$node = $node->previousSibling;
 
-			if ($node instanceof \DOMElement && strtolower($node->nodeName) === 'br') {
+			if ($node instanceof \DOMElement) {
 				break;
 			}
 
@@ -679,10 +679,18 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 		$badge->setAttribute('data-ra_tweaks-diary-badge', '1');
 		$badge->setAttribute('title', $label);
 		$badge->setAttribute('aria-label', $label);
-		$badge->setAttribute('style', $this->markerBadgeStyle($colour));
+		$badge->setAttribute('style', $this->diaryBadgeStyle($colour));
 		$badge->appendChild($document->createTextNode($symbol));
 
 		return $badge;
+	}
+
+	private function diaryBadgeStyle(string $colour): string
+	{
+		return 'display: inline-grid; place-items: center; '
+			. 'width: 1.7em; height: 1.7em; margin-right: 0.35em; border-radius: 999px; '
+			. 'background: ' . $colour . '; color: #fff; font-size: 1.3em; font-weight: 800; '
+			. 'line-height: 1; vertical-align: -0.35em; box-sizing: border-box;';
 	}
 
 	private function firstMeaningfulTextNode(\DOMNode $node): ?\DOMText
