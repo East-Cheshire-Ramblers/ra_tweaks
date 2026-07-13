@@ -226,24 +226,17 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 		$cancelTerms = $this->normaliseList((string) $this->params->get('cancel_terms', 'cancelled,canceled'));
 		$alignGradeIcons = (bool) $this->params->get('align_grade_icons', 1);
 		$walkTypeLabelling = $this->walkTypeLabellingConfig();
+		$diaryIconsEnabled = (bool) $this->params->get('diary_category_icons', 1);
 
-		if ($marker === '') {
+		$needsMarkerPass = $marker !== '' && strpos($body, $marker) !== false;
+
+		if (!$needsMarkerPass && !$diaryIconsEnabled) {
 			if ($alignGradeIcons || $walkTypeLabelling['enabled']) {
 				$output = $this->injectFrontendScript($body, $marker, $colour, $cancelTerms, $alignGradeIcons, $walkTypeLabelling);
 
 				if ($output !== $body) {
 					$this->app->setBody($output);
 				}
-			}
-
-			return;
-		}
-
-		if (strpos($body, $marker) === false) {
-			$output = $this->injectFrontendScript($body, $marker, $colour, $cancelTerms, $alignGradeIcons, $walkTypeLabelling);
-
-			if ($output !== $body) {
-				$this->app->setBody($output);
 			}
 
 			return;
@@ -256,15 +249,50 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 		libxml_use_internal_errors($previous);
 
 		if (!$loaded) {
+			$output = $this->injectFrontendScript($body, $marker, $colour, $cancelTerms, $alignGradeIcons, $walkTypeLabelling);
+
+			if ($output !== $body) {
+				$this->app->setBody($output);
+			}
+
 			return;
 		}
 
+		$changed = false;
+
+		if ($needsMarkerPass) {
+			$changed = $this->applyChangedWalkMarker($dom, $marker, $colour, $cancelTerms);
+		}
+
+		if ($diaryIconsEnabled) {
+			$changed = $this->applyDiaryCategoryIcons($dom) || $changed;
+		}
+
+		$output = $body;
+
+		if ($changed) {
+			$output = $dom->saveHTML();
+
+			if (is_string($output)) {
+				$output = $this->stripInjectedXmlDeclaration($output);
+			}
+		}
+
+		$output = $this->injectFrontendScript($output, $marker, $colour, $cancelTerms, $alignGradeIcons, $walkTypeLabelling);
+
+		if ($changed || $output !== $body) {
+			$this->app->setBody($output);
+		}
+	}
+
+	private function applyChangedWalkMarker(\DOMDocument $dom, string $marker, string $colour, array $cancelTerms): bool
+	{
 		$xpath = new \DOMXPath($dom);
 		$textNodes = $xpath->query('//text()[contains(., ' . $this->xpathLiteral($marker) . ')]');
 		$changed = false;
 
 		if (!$textNodes instanceof \DOMNodeList) {
-			return;
+			return false;
 		}
 
 		foreach (iterator_to_array($textNodes) as $textNode) {
@@ -291,21 +319,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 			$changed = true;
 		}
 
-		$output = $body;
-
-		if ($changed) {
-			$output = $dom->saveHTML();
-
-			if (is_string($output)) {
-				$output = $this->stripInjectedXmlDeclaration($output);
-			}
-		}
-
-		$output = $this->injectFrontendScript($output, $marker, $colour, $cancelTerms, $alignGradeIcons, $walkTypeLabelling);
-
-		if ($changed || $output !== $body) {
-			$this->app->setBody($output);
-		}
+		return $changed;
 	}
 
 	/**
@@ -502,6 +516,144 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 			. 'width: 1.45em; height: 1.45em; margin-right: 0.3em; border-radius: 999px; '
 			. 'background: ' . $colour . '; color: #fff; font-size: 0.72em; font-weight: 800; '
 			. 'line-height: 1; vertical-align: 0.12em; padding-top: 0.12em; box-sizing: border-box;';
+	}
+
+	private function applyDiaryCategoryIcons(\DOMDocument $dom): bool
+	{
+		$xpath = new \DOMXPath($dom);
+		$anchors = $xpath->query("//a[contains(@href, 'option=com_ra_events') and contains(@href, 'view=event')]");
+
+		if (!$anchors instanceof \DOMNodeList || $anchors->length === 0) {
+			return false;
+		}
+
+		$eventIds = [];
+
+		foreach (iterator_to_array($anchors) as $anchor) {
+			if (!$anchor instanceof \DOMElement) {
+				continue;
+			}
+
+			$id = $this->extractEventId((string) $anchor->getAttribute('href'));
+
+			if ($id !== null) {
+				$eventIds[$id] = true;
+			}
+		}
+
+		if ($eventIds === []) {
+			return false;
+		}
+
+		$types = $this->fetchDiaryEventTypes(array_keys($eventIds));
+
+		if ($types === []) {
+			return false;
+		}
+
+		$changed = false;
+
+		foreach (iterator_to_array($anchors) as $anchor) {
+			if (!$anchor instanceof \DOMElement) {
+				continue;
+			}
+
+			$id = $this->extractEventId((string) $anchor->getAttribute('href'));
+			$eventTypeId = $id !== null ? ($types[$id] ?? null) : null;
+
+			if ($eventTypeId === null) {
+				continue;
+			}
+
+			$icon = $this->diaryCategoryIcon($eventTypeId);
+
+			if ($icon === null) {
+				continue;
+			}
+
+			$row = $this->nearestContainer($anchor);
+
+			if ($row->getAttribute('data-ra_tweaks-diary-icon') === '1') {
+				continue;
+			}
+
+			$badge = $this->createDiaryCategoryBadge($dom, $icon['symbol'], $icon['colour'], $icon['label']);
+			$row->insertBefore($badge, $row->firstChild);
+			$row->setAttribute('data-ra_tweaks-diary-icon', '1');
+			$changed = true;
+		}
+
+		return $changed;
+	}
+
+	private function extractEventId(string $href): ?int
+	{
+		if (preg_match('/[?&]id=(\d+)/', html_entity_decode($href), $matches) === 1) {
+			return (int) $matches[1];
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param int[] $ids
+	 * @return array<int, int>
+	 */
+	private function fetchDiaryEventTypes(array $ids): array
+	{
+		if ($ids === []) {
+			return [];
+		}
+
+		try {
+			$db = Factory::getContainer()->get(DatabaseInterface::class);
+			$query = $db->getQuery(true)
+				->select($db->quoteName(['id', 'event_type_id']))
+				->from($db->quoteName('#__ra_events'))
+				->whereIn($db->quoteName('id'), $ids);
+
+			$db->setQuery($query);
+			$rows = $db->loadAssocList();
+		} catch (\Throwable $exception) {
+			return [];
+		}
+
+		$types = [];
+
+		foreach ($rows as $row) {
+			$types[(int) $row['id']] = (int) $row['event_type_id'];
+		}
+
+		return $types;
+	}
+
+	/**
+	 * @return array{symbol: string, colour: string, label: string}|null
+	 */
+	private function diaryCategoryIcon(int $eventTypeId): ?array
+	{
+		$icons = [
+			1 => ['symbol' => '📋', 'colour' => '#607D8B', 'label' => 'Committee Meeting'],
+			2 => ['symbol' => '🎉', 'colour' => '#E91E63', 'label' => 'Social Event'],
+			3 => ['symbol' => '🧭', 'colour' => '#009688', 'label' => 'Training'],
+			4 => ['symbol' => '🎒', 'colour' => '#FF5722', 'label' => 'Weekend Away'],
+			5 => ['symbol' => '🚌', 'colour' => '#3F51B5', 'label' => 'Coach Trip'],
+			6 => ['symbol' => '🚶', 'colour' => '#4CAF50', 'label' => 'Themed Walk'],
+		];
+
+		return $icons[$eventTypeId] ?? null;
+	}
+
+	private function createDiaryCategoryBadge(\DOMDocument $document, string $symbol, string $colour, string $label): \DOMElement
+	{
+		$badge = $document->createElement('span');
+		$badge->setAttribute('data-ra_tweaks-diary-badge', '1');
+		$badge->setAttribute('title', $label);
+		$badge->setAttribute('aria-label', $label);
+		$badge->setAttribute('style', $this->markerBadgeStyle($colour));
+		$badge->appendChild($document->createTextNode($symbol));
+
+		return $badge;
 	}
 
 	private function firstMeaningfulTextNode(\DOMNode $node): ?\DOMText
