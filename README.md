@@ -18,7 +18,8 @@ The first tweak highlights rendered Ramblers walk titles that contain a configur
 - Colours the programme-page changed-walk row text after the grade icon, including date, title, distance, and contact.
 - Adds an **RA Tweaks** administrator menu item under **Components** that opens this plugin's settings.
 - Optionally aligns programme walk grade icons beside wrapped title text.
-- Optionally appends a coloured walk type label (STROLLER, SHORT WALK, MEDIUM WALK or LONG WALK) to the end of each programme walk title, based on the walk's mileage, so it no longer needs to be typed in manually. Skips walks that already contain a walk type or "evening walk" in the title, and skips cancelled walks.
+- Optionally appends a coloured walk type label (STROLLER, SHORT WALK, MEDIUM WALK or LONG WALK) to the end of each programme walk title, based on the walk's mileage, so it no longer needs to be typed in manually. Skips walks that already contain a manual walk type in the title, and skips cancelled walks.
+- Evening walks: since start time isn't shown on the programme listing, walk leaders add `- EVENING WALK` anywhere in the title as before. The plugin then moves that text to the end of the title and applies its own configurable colour, consistent with the mileage-based labels. Mileage bands are not applied to evening walks.
 
 ## Install
 
@@ -26,13 +27,13 @@ Zip the contents of `plg_system_ra_tweaks` and install the zip in Joomla:
 
 ```sh
 cd plg_system_ra_tweaks
-zip -r ../ra_tweaks-1.2.2.zip .
+zip -r ../ra_tweaks-1.3.0.zip .
 ```
 
 Then in Joomla:
 
 1. Go to **System > Install > Extensions**.
-2. Upload `ra_tweaks-1.2.2.zip`.
+2. Upload `ra_tweaks-1.3.0.zip`.
 3. Go to **System > Manage > Plugins**.
 4. Enable **System - RA Tweaks**.
 5. Configure the marker and colour.

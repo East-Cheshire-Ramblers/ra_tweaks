@@ -323,6 +323,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 				'short' => $this->normaliseColour((string) $this->params->get('short_colour', '#2196F3')),
 				'medium' => $this->normaliseColour((string) $this->params->get('medium_colour', '#FF9800')),
 				'long' => $this->normaliseColour((string) $this->params->get('long_colour', '#E53935')),
+				'evening' => $this->normaliseColour((string) $this->params->get('evening_colour', '#5E35B1')),
 			],
 		];
 	}
@@ -1166,9 +1167,40 @@ function(config) {
 				return colours.medium;
 			case "LONG WALK":
 				return colours.long;
+			case "EVENING WALK":
+				return colours.evening;
 			default:
 				return null;
 		}
+	}
+
+	function appendWalkTypeBadge(pointer, label, colour) {
+		var badge = document.createElement("span");
+		badge.setAttribute("data-ra_tweaks-walk-type", "1");
+		badge.style.color = colour;
+		badge.style.fontWeight = "700";
+		badge.textContent = " " + label;
+
+		pointer.appendChild(badge);
+	}
+
+	function eveningWalkTextNode(pointer) {
+		for (var i = 0; i < pointer.childNodes.length; i++) {
+			var node = pointer.childNodes[i];
+
+			if (node.nodeType === Node.TEXT_NODE && /evening\s+walk/i.test(node.nodeValue)) {
+				return node;
+			}
+		}
+
+		return null;
+	}
+
+	function stripEveningWalk(textNode) {
+		textNode.nodeValue = textNode.nodeValue
+			.replace(/[\s,–—-]*evening\s+walk[\s,]*/i, " ")
+			.replace(/\s{2,}/g, " ")
+			.trim();
 	}
 
 	function labelProgrammeItem(item) {
@@ -1188,7 +1220,16 @@ function(config) {
 
 		item.setAttribute("data-ra_tweaks-walk-type-labelled", "1");
 
-		if (/\b(LONG|SHORT|MEDIUM)\s+WALK\b|\bSTROLLER\b|\bEVENING\s+WALK\b/i.test(found.pointer.textContent || "")) {
+		var eveningNode = eveningWalkTextNode(found.pointer);
+
+		if (eveningNode) {
+			stripEveningWalk(eveningNode);
+			appendWalkTypeBadge(found.pointer, "EVENING WALK", walkTypeColour("EVENING WALK"));
+
+			return;
+		}
+
+		if (/\b(LONG|SHORT|MEDIUM)\s+WALK\b|\bSTROLLER\b/i.test(found.pointer.textContent || "")) {
 			return;
 		}
 
@@ -1199,13 +1240,7 @@ function(config) {
 			return;
 		}
 
-		var badge = document.createElement("span");
-		badge.setAttribute("data-ra_tweaks-walk-type", "1");
-		badge.style.color = colour;
-		badge.style.fontWeight = "700";
-		badge.textContent = " " + label;
-
-		found.pointer.appendChild(badge);
+		appendWalkTypeBadge(found.pointer, label, colour);
 	}
 
 	function trimTrailingBreak(textWrap) {
