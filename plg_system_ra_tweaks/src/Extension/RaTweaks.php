@@ -650,7 +650,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 
 	private function diaryRowStyle(): string
 	{
-		return 'display: block; padding-left: 36px; text-indent: -36px;';
+		return 'display: block; padding-left: 36px; text-indent: -36px; margin-bottom: 10px;';
 	}
 
 	private function extractEventId(string $href): ?int
