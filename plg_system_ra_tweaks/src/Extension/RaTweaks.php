@@ -571,19 +571,48 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 				continue;
 			}
 
-			$row = $this->nearestContainer($anchor);
+			if ($anchor->getAttribute('data-ra_tweaks-diary-icon') === '1') {
+				continue;
+			}
 
-			if ($row->getAttribute('data-ra_tweaks-diary-icon') === '1') {
+			$lineStart = $this->diaryEntryLineStart($anchor);
+
+			if (!$lineStart->parentNode instanceof \DOMNode) {
 				continue;
 			}
 
 			$badge = $this->createDiaryCategoryBadge($dom, $icon['symbol'], $icon['colour'], $icon['label']);
-			$row->insertBefore($badge, $row->firstChild);
-			$row->setAttribute('data-ra_tweaks-diary-icon', '1');
+			$lineStart->parentNode->insertBefore($badge, $lineStart);
+			$anchor->setAttribute('data-ra_tweaks-diary-icon', '1');
 			$changed = true;
 		}
 
 		return $changed;
+	}
+
+	/**
+	 * Diary Dates entries aren't individually wrapped - they're flat text/<br>/<a>
+	 * siblings inside one shared module container. Walk back through previous
+	 * siblings to the nearest preceding <br> (or the start of the parent) to find
+	 * the first node of this entry's own line, so the icon lands to its left
+	 * rather than at the top of the whole module.
+	 */
+	private function diaryEntryLineStart(\DOMElement $anchor): \DOMNode
+	{
+		$lineStart = $anchor;
+		$node = $anchor;
+
+		while ($node->previousSibling instanceof \DOMNode) {
+			$node = $node->previousSibling;
+
+			if ($node instanceof \DOMElement && strtolower($node->nodeName) === 'br') {
+				break;
+			}
+
+			$lineStart = $node;
+		}
+
+		return $lineStart;
 	}
 
 	private function extractEventId(string $href): ?int
