@@ -242,9 +242,11 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 			return;
 		}
 
+		[$protectedBody, $rawTextPlaceholders] = $this->protectRawTextElements($body);
+
 		$dom = new \DOMDocument('1.0', 'UTF-8');
 		$previous = libxml_use_internal_errors(true);
-		$loaded = $dom->loadHTML('<?xml encoding="UTF-8">' . $body, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+		$loaded = $dom->loadHTML('<?xml encoding="UTF-8">' . $protectedBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 		libxml_clear_errors();
 		libxml_use_internal_errors($previous);
 
@@ -275,6 +277,7 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 
 			if (is_string($output)) {
 				$output = $this->stripInjectedXmlDeclaration($output);
+				$output = $this->restoreRawTextElements($output, $rawTextPlaceholders);
 			}
 		}
 
@@ -874,6 +877,48 @@ final class RaTweaks extends CMSPlugin implements SubscriberInterface
 	private function stripInjectedXmlDeclaration(string $html): string
 	{
 		return preg_replace('/^<\?xml encoding="UTF-8"\?>\s*/', '', $html) ?? $html;
+	}
+
+	/**
+	 * PHP's DOMDocument HTML parser doesn't reliably treat <script>/<style>
+	 * content as raw text - a script containing template literals with
+	 * embedded HTML-like markup (e.g. `<div class="${x}">`) can make the
+	 * parser think a real tag has closed, truncating/corrupting everything
+	 * after it once the document is re-serialised. Swap these blocks out for
+	 * inert placeholder comments before parsing so the parser never sees
+	 * their content, then restore the original bytes verbatim afterwards.
+	 *
+	 * @return array{0: string, 1: array<string, string>}
+	 */
+	private function protectRawTextElements(string $html): array
+	{
+		$placeholders = [];
+		$index = 0;
+
+		$protected = preg_replace_callback(
+			'/<(script|style)\b[^>]*>.*?<\/\1\s*>/is',
+			static function (array $matches) use (&$placeholders, &$index): string {
+				$key = 'ra-tweaks-rawtext-' . $index++;
+				$placeholders[$key] = $matches[0];
+
+				return '<!--' . $key . '-->';
+			},
+			$html
+		);
+
+		return [is_string($protected) ? $protected : $html, $placeholders];
+	}
+
+	/**
+	 * @param array<string, string> $placeholders
+	 */
+	private function restoreRawTextElements(string $html, array $placeholders): string
+	{
+		foreach ($placeholders as $key => $original) {
+			$html = str_replace('<!--' . $key . '-->', $original, $html);
+		}
+
+		return $html;
 	}
 
 	/**
