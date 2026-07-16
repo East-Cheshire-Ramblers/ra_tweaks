@@ -7,7 +7,7 @@
 	<license>GNU General Public License version 3 or later; see LICENSE.txt</license>
 	<authorEmail>webmaster@bigley.me.uk</authorEmail>
 	<authorUrl>https://ramblerseastcheshire.org.uk/</authorUrl>
-	<version>1.4.9</version>
+	<version>1.4.10</version>
 	<description>PLG_SYSTEM_RA_TWEAKS_XML_DESCRIPTION</description>
 	<namespace path="src">Ramblerseastcheshire\Plugin\System\RaTweaks</namespace>
 	<files>
@@ -20,7 +20,7 @@
 		<language tag="en-GB">language/en-GB/plg_system_ra_tweaks.sys.ini</language>
 	</languages>
 	<updateservers>
-		<server type="extension" priority="1" name="RA Tweaks Updates">https://raw.githubusercontent.com/East-Cheshire-Ramblers/ra_tweaks/main/updates/ra_tweaks.xml</server>
+		<server type="extension" priority="1" name="RA Tweaks Updates">https://raw.githubusercontent.com/Ramblers-Tools/ra_tweaks/main/updates/ra_tweaks.xml</server>
 	</updateservers>
 	<config>
 		<fields name="params">
