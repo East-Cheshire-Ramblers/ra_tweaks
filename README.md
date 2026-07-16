@@ -43,7 +43,7 @@ Then in Joomla:
 
 The plugin manifest registers a Joomla update server:
 
-`https://raw.githubusercontent.com/East-Cheshire-Ramblers/ra_tweaks/main/updates/ra_tweaks.xml`
+`https://raw.githubusercontent.com/Ramblers-Tools/ra_tweaks/main/updates/ra_tweaks.xml`
 
 For each release, update `updates/ra_tweaks.xml` to the new version and make sure the `downloadurl` points to the matching GitHub release asset.
 
