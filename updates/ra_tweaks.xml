@@ -7,12 +7,12 @@
 		<type>plugin</type>
 		<folder>system</folder>
 		<client>site</client>
-		<version>1.4.9</version>
-		<infourl title="Release notes">https://github.com/Ramblers-Tools/ra_tweaks/releases/tag/v1.4.9</infourl>
+		<version>1.4.10</version>
+		<infourl title="Release notes">https://github.com/Ramblers-Tools/ra_tweaks/releases/tag/v1.4.10</infourl>
 		<downloads>
-			<downloadurl type="full" format="zip">https://github.com/Ramblers-Tools/ra_tweaks/releases/download/v1.4.9/ra_tweaks-1.4.9.zip</downloadurl>
+			<downloadurl type="full" format="zip">https://github.com/Ramblers-Tools/ra_tweaks/releases/download/v1.4.10/ra_tweaks-1.4.10.zip</downloadurl>
 		</downloads>
-		<sha256>bd2f8d54cea6f0837c703da3cc32fda46a950ca1c77402d204356662742198b4</sha256>
+		<sha256>02e847edd049f6f5afb976a0ae8d41c1397e4dd75da23188cb197fc3ad19cd97</sha256>
 		<tags>
 			<tag>stable</tag>
 		</tags>
